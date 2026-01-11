@@ -1,15 +1,12 @@
 {
   "files": {
-    "main.css": "/factory-sim/static/css/main.e6c13ad2.css",
-    "main.js": "/factory-sim/static/js/main.416abb56.js",
-    "static/js/453.2f422b15.chunk.js": "/factory-sim/static/js/453.2f422b15.chunk.js",
-    "index.html": "/factory-sim/index.html",
-    "main.e6c13ad2.css.map": "/factory-sim/static/css/main.e6c13ad2.css.map",
-    "main.416abb56.js.map": "/factory-sim/static/js/main.416abb56.js.map",
-    "453.2f422b15.chunk.js.map": "/factory-sim/static/js/453.2f422b15.chunk.js.map"
+    "main.css": "/factory-sim/static/css/main.4efb37a3.css",
+    "main.js": "/factory-sim/static/js/main.3e353199.js",
+    "static/js/206.e996a6de.chunk.js": "/factory-sim/static/js/206.e996a6de.chunk.js",
+    "index.html": "/factory-sim/index.html"
   },
   "entrypoints": [
-    "static/css/main.e6c13ad2.css",
-    "static/js/main.416abb56.js"
+    "static/css/main.4efb37a3.css",
+    "static/js/main.3e353199.js"
   ]
 }
