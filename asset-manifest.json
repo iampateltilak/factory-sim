@@ -1,12 +1,12 @@
 {
   "files": {
-    "main.css": "/factory-sim/static/css/main.4efb37a3.css",
-    "main.js": "/factory-sim/static/js/main.75a98e84.js",
-    "static/js/206.e996a6de.chunk.js": "/factory-sim/static/js/206.e996a6de.chunk.js",
-    "index.html": "/factory-sim/index.html"
+    "main.css": "./static/css/main.4efb37a3.css",
+    "main.js": "./static/js/main.fb740620.js",
+    "static/js/206.e996a6de.chunk.js": "./static/js/206.e996a6de.chunk.js",
+    "index.html": "./index.html"
   },
   "entrypoints": [
     "static/css/main.4efb37a3.css",
-    "static/js/main.75a98e84.js"
+    "static/js/main.fb740620.js"
   ]
 }
