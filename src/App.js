@@ -1,4 +1,3 @@
-import CompetitionFinal from './CompetitionFinal';
 import React, { useState, useEffect, useLayoutEffect } from 'react';
 import { db } from './firebase'; 
 import { doc, getDoc, setDoc, updateDoc, collection, getDocs, writeBatch } from "firebase/firestore";
@@ -22,9 +21,10 @@ import {
 // ==========================================
 
 const INDUSTRIES = {
-  THERMO: { id: 'THERMO', name: 'Neuro Thermostats', type: 'High Tech', icon: <Cpu size={24}/>, desc: 'High Margin, High R&D. Competes on Innovation.', startingCash: 60000000, baseValuation: 100000000, unitPrice: 2000, baseCost: 1200 },
-  SHOE: { id: 'SHOE', name: 'Ocean Stride', type: 'Manufacturing', icon: <Footprints size={24}/>, desc: 'Volume play. Competes on Price & Efficiency.', startingCash: 40000000, baseValuation: 80000000, unitPrice: 1000, baseCost: 850 },
-  COFFEE: { id: 'COFFEE', name: 'Zenith Brew', type: 'FMCG', icon: <Coffee size={24}/>, desc: 'Brand sensitive. Competes on Marketing.', startingCash: 50000000, baseValuation: 90000000, unitPrice: 150, baseCost: 90 }
+  // EASY MODE: Increased starting cash to 75M
+  THERMO: { id: 'THERMO', name: 'Neuro Thermostats', type: 'High Tech', icon: <Cpu size={24}/>, desc: 'High Margin, High R&D. Competes on Innovation.', startingCash: 75000000, baseValuation: 120000000, unitPrice: 2000, baseCost: 1100 },
+  SHOE: { id: 'SHOE', name: 'Ocean Stride', type: 'Manufacturing', icon: <Footprints size={24}/>, desc: 'Volume play. Competes on Price & Efficiency.', startingCash: 55000000, baseValuation: 90000000, unitPrice: 1000, baseCost: 750 },
+  COFFEE: { id: 'COFFEE', name: 'Zenith Brew', type: 'FMCG', icon: <Coffee size={24}/>, desc: 'Brand sensitive. Competes on Marketing.', startingCash: 65000000, baseValuation: 100000000, unitPrice: 150, baseCost: 80 }
 };
 
 const YEAR_THEMES = [
@@ -36,34 +36,35 @@ const YEAR_THEMES = [
 ];
 
 const MANDATORY_EVENTS = {
-  2: { name: "Global Recession", desc: "CRASH: Demand -30%, Board Trust -15%. Cash is King.", effects: [{ type: "DEMAND", val: 0.70 }, { type: "TRUST", val: -15 }] },
-  3: { name: "The Great Resignation", desc: "LABOR CRISIS: Morale -25, Capacity -20%. Retention is vital.", effects: [{ type: "MORALE", val: -25 }, { type: "CAPACITY", val: 0.80 }] },
-  4: { name: "The AI Singularity", desc: "TECH SHOCK: Costs -15%, but Rival Efficiency +20%.", effects: [{ type: "COST", val: 0.85 }, { type: "RIVAL_COST", val: 0.80 }] }
+  // EASY MODE: Reduced penalties
+  2: { name: "Global Recession", desc: "DOWNTURN: Demand -20%, Board Trust -10%. Cash is King.", effects: [{ type: "DEMAND", val: 0.80 }, { type: "TRUST", val: -10 }] },
+  3: { name: "The Great Resignation", desc: "LABOR CRISIS: Morale -15, Capacity -15%. Retention is vital.", effects: [{ type: "MORALE", val: -15 }, { type: "CAPACITY", val: 0.85 }] },
+  4: { name: "The AI Singularity", desc: "TECH SHOCK: Costs -15%, but Rival Efficiency +15%.", effects: [{ type: "COST", val: 0.85 }, { type: "RIVAL_COST", val: 0.85 }] }
 };
 
-// Expanded Event Pool (15+ events for variability)
+// Expanded Event Pool
 const EVENT_POOL = [
-  { name: "Trade War", desc: "Tariffs hit! Costs +20%, Demand -5%.", effects: [{type: "COST", val: 1.2}, {type: "DEMAND", val: 0.95}] },
+  { name: "Trade War", desc: "Tariffs hit! Costs +15%, Demand -5%.", effects: [{type: "COST", val: 1.15}, {type: "DEMAND", val: 0.95}] },
   { name: "Viral Hit", desc: "Social media craze! Demand +30%, Brand +10.", effects: [{type: "DEMAND", val: 1.3}, {type: "BRAND", val: 10}] },
-  { name: "Data Breach", desc: "Hackers! Brand -15, Trust -10.", effects: [{type: "BRAND", val: -15}, {type: "TRUST", val: -10}] },
-  { name: "Green Subsidy", desc: "Gov grant! Cash +15M if ESG > 50.", effects: [{type: "CONDITIONAL_CASH", val: 15000000, condition: (s) => s.esg > 50}] },
-  { name: "Labor Strike", desc: "Union walkout! Capacity -40%, Trust -20.", effects: [{type: "CAPACITY", val: 0.6}, {type: "TRUST", val: -20}] },
+  { name: "Data Breach", desc: "Hackers! Brand -10, Trust -5.", effects: [{type: "BRAND", val: -10}, {type: "TRUST", val: -5}] },
+  { name: "Green Subsidy", desc: "Gov grant! Cash +15M if ESG > 40.", effects: [{type: "CONDITIONAL_CASH", val: 15000000, condition: (s) => s.esg > 40}] },
+  { name: "Labor Strike", desc: "Union walkout! Capacity -30%, Trust -15.", effects: [{type: "CAPACITY", val: 0.7}, {type: "TRUST", val: -15}] },
   { name: "Tech Breakthrough", desc: "R&D pays off! Quality +10, Cost -5%.", effects: [{type: "QUALITY", val: 10}, {type: "COST", val: 0.95}] },
-  { name: "Supply Chain Knot", desc: "Port delays. Cost +15%, Capacity -10%.", effects: [{type: "COST", val: 1.15}, {type: "CAPACITY", val: 0.9}] },
-  { name: "Influencer Cancelled", desc: "Bad PR. Brand -10, Demand -5%.", effects: [{type: "BRAND", val: -10}, {type: "DEMAND", val: 0.95}] },
+  { name: "Supply Chain Knot", desc: "Port delays. Cost +10%, Capacity -5%.", effects: [{type: "COST", val: 1.10}, {type: "CAPACITY", val: 0.95}] },
+  { name: "Influencer Cancelled", desc: "Bad PR. Brand -5, Demand -5%.", effects: [{type: "BRAND", val: -5}, {type: "DEMAND", val: 0.95}] },
   { name: "Raw Material Crash", desc: "Commodity prices drop. Cost -10%.", effects: [{type: "COST", val: 0.9}] },
   { name: "Competitor Recall", desc: "Rival product fails. Demand +15%.", effects: [{type: "DEMAND", val: 1.15}] },
   { name: "Regulatory Fine", desc: "Compliance issue. Cash -5M, Trust -5.", effects: [{type: "CASH", val: -5000000}, {type: "TRUST", val: -5}] },
-  { name: "Angel Investor", desc: "Seed funding. Cash +10M, Equity Dilution (Trust -5).", effects: [{type: "CASH", val: 10000000}, {type: "TRUST", val: -5}] }
+  { name: "Angel Investor", desc: "Seed funding. Cash +15M, Equity Dilution (Trust -5).", effects: [{type: "CASH", val: 15000000}, {type: "TRUST", val: -5}] }
 ];
 
 const KPI_DEFINITIONS = {
-  cash: { title: "Liquid Cash", def: "Funds available.", calc: "Cash - Spend + Net Profit", tip: "Keep > ₹10M." },
+  cash: { title: "Liquid Cash", def: "Funds available.", calc: "Cash - Spend + Net Profit", tip: "Keep > ₹5M." },
   valuation: { title: "Valuation", def: "Market Cap.", calc: "Weighted Avg (Past + Current)", tip: "Momentum matters." },
-  margin: { title: "Net Margin", def: "Profit %.", calc: "Net Profit / Revenue", tip: "Target > 15%." },
+  margin: { title: "Net Margin", def: "Profit %.", calc: "Net Profit / Revenue", tip: "Target > 10%." },
   inventory: { title: "Inventory", def: "Unsold Goods.", calc: "Prod - Sales", tip: "Costs storage fees." },
-  morale: { title: "Morale", def: "Worker Happiness.", calc: "Base - Auto + Training", tip: "<50% risks Strikes." },
-  machineHealth: { title: "Asset Health", def: "Factory Status.", calc: "Decays 10%/yr", tip: "<50% risks Breakdown." },
+  morale: { title: "Morale", def: "Worker Happiness.", calc: "Base - Auto + Training", tip: "<40% risks Strikes." },
+  machineHealth: { title: "Asset Health", def: "Factory Status.", calc: "Decays 5%/yr", tip: "<40% risks Breakdown." },
   quality: { title: "Quality", def: "Product Standard.", calc: "R&D Spend", tip: "Allows higher prices." },
   esg: { title: "ESG", def: "Sustainability.", calc: "Eco Spend", tip: "Generates Carbon Credits." },
   board: { title: "Board Trust", def: "Job Security.", calc: "Strategic + Financial Score", tip: "0% = Fired." }
@@ -86,10 +87,10 @@ const ONBOARDING_SEQUENCE = [
 ];
 
 const DILEMMAS = [
-  { year: 1, title: "The Automation Paradox", desc: "Robots can replace 20% of staff. Efficiency vs. Morale?", options: [{ label: "Aggressive Auto", cost: 10000000, autoMod: 0.15, moraleMod: -20, desc: "High Efficiency, Strike Risk" }, { label: "Human-Centric", cost: 3000000, autoMod: 0.05, moraleMod: 10, desc: "Slower Growth, Happy Staff" }] },
-  { year: 2, title: "Supply Chain Ethics", desc: "A cheaper supplier uses questionable labor practices.", options: [{ label: "Cheap Supplier", cost: 0, costMod: 0.9, esgMod: -25, desc: "Lower Unit Costs, Bad ESG" }, { label: "Ethical Supply", cost: 5000000, costMod: 1.05, esgMod: 15, desc: "Higher Costs, Brand Premium" }] },
-  { year: 3, title: "Crisis Management", desc: "Recession hits. Competitor slashed prices.", options: [{ label: "Price War", cost: 0, revMod: 0.85, volMod: 1.2, desc: "Slash Margins to keep Volume" }, { label: "Quality Pivot", cost: 15000000, qualMod: 20, desc: "Invest in R&D to justify price" }] },
-  { year: 4, title: "Sustainability Push", desc: "New Carbon Tax introduced. Do we go Net Zero?", options: [{ label: "Pay the Tax", cost: 2000000, esgMod: -5, desc: "Eat cost annually" }, { label: "Green Retrofit", cost: 20000000, esgMod: 30, desc: "Huge CapEx, Passive Income later" }] }
+  { year: 1, title: "The Automation Paradox", desc: "Robots can replace 20% of staff. Efficiency vs. Morale?", options: [{ label: "Aggressive Auto", cost: 8000000, autoMod: 0.15, moraleMod: -15, desc: "High Efficiency, Strike Risk" }, { label: "Human-Centric", cost: 2000000, autoMod: 0.05, moraleMod: 10, desc: "Slower Growth, Happy Staff" }] },
+  { year: 2, title: "Supply Chain Ethics", desc: "A cheaper supplier uses questionable labor practices.", options: [{ label: "Cheap Supplier", cost: 0, costMod: 0.9, esgMod: -20, desc: "Lower Unit Costs, Bad ESG" }, { label: "Ethical Supply", cost: 4000000, costMod: 1.05, esgMod: 15, desc: "Higher Costs, Brand Premium" }] },
+  { year: 3, title: "Crisis Management", desc: "Recession hits. Competitor slashed prices.", options: [{ label: "Price War", cost: 0, revMod: 0.90, volMod: 1.2, desc: "Slash Margins to keep Volume" }, { label: "Quality Pivot", cost: 12000000, qualMod: 20, desc: "Invest in R&D to justify price" }] },
+  { year: 4, title: "Sustainability Push", desc: "New Carbon Tax introduced. Do we go Net Zero?", options: [{ label: "Pay the Tax", cost: 1500000, esgMod: -5, desc: "Eat cost annually" }, { label: "Green Retrofit", cost: 15000000, esgMod: 30, desc: "Huge CapEx, Passive Income later" }] }
 ];
 
 const formatMoney = (val) => `₹${(val / 1000000).toFixed(1)}M`;
@@ -125,8 +126,8 @@ const GameManual = ({ onClose }) => (
                 <h3 className="font-bold mb-2 flex items-center gap-2"><AlertTriangle size={16}/> The Red Queen Effect</h3>
                 <p className="text-sm text-slate-600 mb-4">You cannot stand still. Your metrics decay naturally every year.</p>
                 <ul className="text-sm list-disc pl-5 space-y-1 text-slate-700">
-                    <li><strong>Brand:</strong> -10% per year (people forget).</li>
-                    <li><strong>Machine Health:</strong> -10% per year (wear & tear).</li>
+                    <li><strong>Brand:</strong> -5% per year (people forget).</li>
+                    <li><strong>Machine Health:</strong> -5% per year (wear & tear).</li>
                     <li><strong>Morale:</strong> Decreases if you automate heavily.</li>
                 </ul>
             </div>
@@ -152,8 +153,8 @@ const GameManual = ({ onClose }) => (
 
       <div className="bg-slate-900 text-white p-8 rounded-2xl text-center">
         <h3 className="text-2xl font-bold mb-2">The Bailout Protocol</h3>
-        <p className="text-slate-300 max-w-2xl mx-auto mb-4">If you go bankrupt or get fired, you may be offered ONE bailout. <strong>This is a LOAN, not a gift.</strong> You get ₹50M Cash and ₹50M Debt at 20% Interest. Dividends are locked.</p>
-        <div className="text-xs font-mono text-slate-500">SYSTEM: BAILOUT_FLAG = TRUE | RATE = 20%</div>
+        <p className="text-slate-300 max-w-2xl mx-auto mb-4">If you go bankrupt or get fired, you may be offered ONE bailout. <strong>This is a LOAN, not a gift.</strong> You get ₹50M Cash and ₹50M Debt at 15% Interest. Dividends are locked.</p>
+        <div className="text-xs font-mono text-slate-500">SYSTEM: BAILOUT_FLAG = TRUE | RATE = 15%</div>
       </div>
     </div>
   </div>
@@ -221,7 +222,7 @@ const OnboardingOverlay = ({ stepIndex, onNext, onSkip }) => {
 
   const isLeft = rect.left < window.innerWidth / 2;
   const isTop = rect.top < window.innerHeight / 2;
-  
+   
   if (!textStyles.top && !textStyles.bottom) {
        textStyles = { 
            top: isTop ? rect.top + rect.height + 20 : 'auto', 
@@ -436,7 +437,7 @@ export default function CompetitionFinal() {
     setGameState({
       year: 0,
       cash: ind.startingCash,
-      debt: 20000000,
+      debt: 15000000, // EASY MODE: Lowered starting debt from 20M to 15M
       revenue: 0,
       netProfit: 0,
       valuation: ind.baseValuation,
@@ -446,7 +447,7 @@ export default function CompetitionFinal() {
       brand: 50,
       esg: 50,
       esgReputation: 50,
-      morale: 80,
+      morale: 85, // EASY MODE: Start with higher morale
       machineHealth: 100,
       
       boardTrust: 100,
@@ -459,7 +460,7 @@ export default function CompetitionFinal() {
       supplyChainScore: 50,
       dataLevel: 0,
       inventory: 0,
-      marketShare: 10,
+      marketShare: 12, // EASY MODE: Start with slightly more market share
       
       consultantsUsed: 0,
       oracleUsed: 0,
@@ -514,7 +515,7 @@ export default function CompetitionFinal() {
         lastWarning: null    // Clear warning flag
     });
     setShowBailout(false);
-    alert("EMERGENCY LOAN APPROVED. +₹50M Cash, +₹50M Debt. Interest Rate set to 20%. Dividends LOCKED.");
+    alert("EMERGENCY LOAN APPROVED. +₹50M Cash, +₹50M Debt. Interest Rate set to 15%. Dividends LOCKED.");
   };
 
   const hireConsultant = () => {
@@ -555,7 +556,7 @@ export default function CompetitionFinal() {
 
   const liquidateInventory = (discount) => {
     if (gameState.inventory <= 0) return alert("No inventory.");
-    const brandHit = discount === 0.5 ? 15 : 5;
+    const brandHit = discount === 0.5 ? 10 : 5; // EASY MODE: Reduced brand hit
     if (!window.confirm(`Sell inventory at ${Math.round((1-discount)*100)}% off? Brand Trust -${brandHit}.`)) return;
     const s = gameState;
     const rev = s.inventory * selectedInd.unitPrice * discount;
@@ -599,58 +600,59 @@ export default function CompetitionFinal() {
     let newRivalBrand = s.rivalBrand;
     let newRivalCost = s.rivalCost * (eventMod.RIVAL_COST || 1.0); // FIX 2: Apply Rival Cost Mod
     let rivalStrat = "Balanced";
-    if (s.brand > s.rivalBrand * 1.1) { newRivalCost *= 0.92; rivalStrat = "Price War"; } 
-    else { newRivalBrand *= 1.08; rivalStrat = "Brand Blitz"; }
+    if (s.brand > s.rivalBrand * 1.1) { newRivalCost *= 0.95; rivalStrat = "Price War"; } // EASY MODE: Rival cuts cost less aggressively
+    else { newRivalBrand *= 1.05; rivalStrat = "Brand Blitz"; }
 
-    const decayFactor = 0.90; 
+    // EASY MODE: Softened Decay Factor from 0.90 (-10%) to 0.95 (-5%)
+    const decayFactor = 0.95; 
     let currentBrand = s.brand * decayFactor;
     let currentQuality = s.quality * decayFactor;
 
-    let dataBoost = i.data * 2; 
+    let dataBoost = i.data * 2.5; // EASY MODE: Data spend is more effective
     let newDataLevel = Math.min(100, s.dataLevel + dataBoost);
 
     const autoGain = i.capex / 100; 
     let newAuto = Math.min(0.95, s.automation + autoGain + (d.autoMod || 0));
-    let newMorale = Math.max(0, Math.min(100, s.morale - (autoGain * 150) + (i.training/5) + (eventMod.MORALE || 0)));
-    let newHealth = Math.max(0, Math.min(100, s.machineHealth - 10 + (i.maintenance/5)));
+    let newMorale = Math.max(0, Math.min(100, s.morale - (autoGain * 120) + (i.training/5) + (eventMod.MORALE || 0))); // EASY MODE: Auto hurts morale less
+    let newHealth = Math.max(0, Math.min(100, s.machineHealth - 5 + (i.maintenance/5))); // EASY MODE: Health decays less (5 instead of 10)
     let newSupply = Math.min(100, s.supplyChainScore + (i.logistics/10));
 
-    const rndEffect = Math.log1p(i.rnd) * 6; 
+    const rndEffect = Math.log1p(i.rnd) * 8; // EASY MODE: R&D more effective
     const newQual = Math.min(100, currentQuality + rndEffect + (d.qualMod || 0) + (eventMod.QUALITY || 0));
     const esgDrag = s.esgReputation < 40 ? 0.95 : 1.0;
-    const mktEffect = Math.sqrt(i.marketing) * 4 * esgDrag;
+    const mktEffect = Math.sqrt(i.marketing) * 5 * esgDrag; // EASY MODE: Marketing more effective
     const newBrand = Math.min(100, currentBrand + mktEffect + (eventMod.BRAND || 0));
     const newEsg = Math.min(100, s.esg + (d.esgMod || 0));
     const newEsgRep = (s.esgReputation + newEsg) / 2;
 
-    let strikePenalty = newMorale < 40 ? 0.5 : 1.0;
-    let machineFactor = newHealth < 50 ? 0.8 : 1.0;
-    let theoreticalCapacity = 100000 * (1 + newAuto) * strikePenalty * (eventMod.CAPACITY || 1.0);
+    let strikePenalty = newMorale < 30 ? 0.6 : 1.0; // EASY MODE: Strike threshold lowered to 30%
+    let machineFactor = newHealth < 40 ? 0.8 : 1.0; // EASY MODE: Machine fail threshold lowered to 40%
+    let theoreticalCapacity = 110000 * (1 + newAuto) * strikePenalty * (eventMod.CAPACITY || 1.0); // EASY MODE: Base capacity increased
     let maxAffordableUnits = s.cash / (ind.baseCost * 0.4);
     let capacity = Math.min(theoreticalCapacity, maxAffordableUnits);
 
     // FIX 1: Rival Pricing affects Player Demand
     let brandDiff = newBrand - newRivalBrand;
-    let baseDemand = 100000;
+    let baseDemand = 110000; // EASY MODE: Base demand increased
     
     let rivalPriceEstimate = newRivalCost * 1.2; // Assume Rival keeps 20% margin
     let priceRatio = ind.unitPrice / rivalPriceEstimate;
-    let pricePenalty = priceRatio > 1.1 ? 0.85 : 1.0; // If you are 10% more expensive, lose 15% demand
+    let pricePenalty = priceRatio > 1.2 ? 0.9 : 1.0; // EASY MODE: Customers less sensitive to price
 
     let dataBonus = 1 + (newDataLevel / 500); 
     
     let marketDemand = baseDemand * (1 + (brandDiff/100)) * (newQual/50) * (eventMod.DEMAND || 1.0) * (d.volMod || 1.0) * dataBonus * pricePenalty;
     
-    let forecastError = 0.3 * (1 - (newDataLevel/100)); 
+    let forecastError = 0.25 * (1 - (newDataLevel/100)); // EASY MODE: Base error reduced
     let optimizedProduction = Math.min(capacity, marketDemand * (1 + forecastError));
 
     let totalAvailable = optimizedProduction + s.inventory;
     let salesVolume = Math.min(totalAvailable, marketDemand);
     let newInventory = Math.max(0, totalAvailable - marketDemand);
-    let warehousingCost = newInventory * (s.year < 2 ? 50 : 100);
+    let warehousingCost = newInventory * (s.year < 2 ? 30 : 50); // EASY MODE: Warehousing cheaper
 
     let shareChange = (brandDiff / 2) + ((newQual*machineFactor - 50) / 4);
-    if (brandDiff < -20) shareChange -= 5; 
+    if (brandDiff < -20) shareChange -= 3; // EASY MODE: Lose share slower
     let newShare = Math.max(1, Math.min(99, s.marketShare + shareChange));
 
     let revenue = salesVolume * ind.unitPrice * (d.revMod || 1.0);
@@ -661,15 +663,16 @@ export default function CompetitionFinal() {
     let newDebt = Math.max(0, s.debt - (i.debtPay * 1000000));
     
     // FIX 4 & 5: High Interest Rate if Bailout used
-    let baseInterest = newDebt > 90000000 ? 0.18 : newDebt > 60000000 ? 0.14 : 0.10;
+    // EASY MODE: Lowered interest rates across the board
+    let baseInterest = newDebt > 90000000 ? 0.15 : newDebt > 60000000 ? 0.12 : 0.08;
     let esgDiscount = newEsgRep > 80 ? 0.02 : 0; 
-    let interestRate = s.bailoutUsed ? 0.20 : Math.max(0.05, baseInterest - esgDiscount);
+    let interestRate = s.bailoutUsed ? 0.15 : Math.max(0.04, baseInterest - esgDiscount);
     
     let interest = newDebt * interestRate;
     
     let dividendPaid = s.bailoutUsed ? 0 : i.dividend * 1000000;
-    let fixedCost = 15000000;
-    let regFine = newEsg < 30 && Math.random() > 0.7 ? 5000000 : 0;
+    let fixedCost = 12000000; // EASY MODE: Fixed cost lowered from 15M to 12M
+    let regFine = newEsg < 30 && Math.random() > 0.8 ? 5000000 : 0; // EASY MODE: Fine chance reduced
     let eventCash = event.effects ? event.effects.filter(e => e.type === "CASH" || (e.type === "CONDITIONAL_CASH" && e.condition(s))).reduce((a,b)=>a+b.val,0) : 0;
 
     let totalExpenses = cogs + fixedCost + warehousingCost + interest + regFine + (d.cost || 0);
@@ -680,11 +683,12 @@ export default function CompetitionFinal() {
     // FIX 7: Guard against zero revenue
     let margin = revenue > 0 ? (netProfit / revenue) * 100 : 0;
     
-    let peRatio = margin < 5 ? 3 : margin > 20 ? 7 : 5;
+    // EASY MODE: P/E Ratio logic more generous
+    let peRatio = margin < 5 ? 4 : margin > 15 ? 8 : 6;
     let currentValuation = ind.baseValuation + (netProfit * peRatio);
     let newValuation = (s.valuation * 0.6) + (currentValuation * 0.4);
 
-    let trustChange = netProfit < 0 ? -10 : 5;
+    let trustChange = netProfit < 0 ? -5 : 5; // EASY MODE: Lose less trust on loss
     if (dividendPaid > 0) trustChange += (s.year - s.lastDividendYear === 1) ? 5 : 10;
     if (newDebt > 80000000) trustChange -= 5;
     let newBoardTrust = Math.max(0, Math.min(100, s.boardTrust + trustChange + (eventMod.TRUST || 0)));
@@ -698,12 +702,12 @@ export default function CompetitionFinal() {
     else if (newInventory > 40000) warning = "Warning: Inventory piling up.";
     else if (regFine > 0) warning = "Warning: Fined 5M for poor ESG practices.";
     
-    if (avgTrust < 30) failure = "Governance Failure: The Board has fired you.";
-    else if (newCash < -10000000 && !s.bailoutUsed) failure = "Insolvency: The company is bankrupt.";
+    if (avgTrust < 20) failure = "Governance Failure: The Board has fired you."; // EASY MODE: Firing threshold lowered
+    else if (newCash < -15000000 && !s.bailoutUsed) failure = "Insolvency: The company is bankrupt."; // EASY MODE: Bankruptcy threshold extended
     // FIX 3: True Game Over (No second chance)
     else if (newCash < 0 && s.bailoutUsed) failure = "Liquidity Crisis: Bailout funds exhausted. Operations ceased.";
-    else if (newMorale < 20 && s.morale < 20) failure = "Labor Revolt: Extended strikes have shut down the plant.";
-    else if (newHealth < 20) failure = "Catastrophic Failure: Factory assets condemned.";
+    else if (newMorale < 15 && s.morale < 15) failure = "Labor Revolt: Extended strikes have shut down the plant."; // EASY MODE: Revolt threshold lowered
+    else if (newHealth < 15) failure = "Catastrophic Failure: Factory assets condemned.";
 
     const newState = {
       ...s, year: s.year + 1, cash: newCash, debt: newDebt, revenue, netProfit, valuation: newValuation,
@@ -773,7 +777,7 @@ export default function CompetitionFinal() {
             <Factory size={48} className="mx-auto text-blue-500 mb-4"/>
             <h1 className="text-3xl font-black uppercase tracking-wider">Factory Sim</h1>
             <p className="text-slate-400 text-sm">Case Study Competition</p>
-            <p className="text-red-500 text-xs font-bold mt-2">v2.1 (Logic Update)</p>
+            <p className="text-red-500 text-xs font-bold mt-2">v3.0 (EASY MODE)</p>
           </div>
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
@@ -1084,7 +1088,7 @@ export default function CompetitionFinal() {
                             <ResponsiveContainer width="100%" height="100%">
                                 <PieChart>
                                     <Pie data={marketData} cx="50%" cy="50%" innerRadius={25} outerRadius={40} paddingAngle={5} dataKey="value">
-                                        {marketData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}
+                                            {marketData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}
                                     </Pie>
                                 </PieChart>
                             </ResponsiveContainer>
