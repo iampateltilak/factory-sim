@@ -1,3 +1,4 @@
+import CompetitionFinal from './CompetitionFinal';
 import React, { useState, useEffect, useLayoutEffect } from 'react';
 import { db } from './firebase'; 
 import { doc, getDoc, setDoc, updateDoc, collection, getDocs, writeBatch } from "firebase/firestore";
